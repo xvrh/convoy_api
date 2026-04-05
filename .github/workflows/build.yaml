@@ -1,0 +1,29 @@
+name: Build
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+jobs:
+  test:
+    name: Analyze and smoke-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 'beta'
+      - run: dart --version
+      - run: dart pub get
+      - run: dart analyze --fatal-infos .
+      - run: dart tool/generate_client.dart
+      - run: docker compose -f test/docker-compose.yml up --wait
+      - run: dart test
+        env:
+          CONVOY_BASE_URL: http://localhost:5005
+      - if: always()
+        run: docker compose -f test/docker-compose.yml logs --tail=100
+      - if: always()
+        run: docker compose -f test/docker-compose.yml down --volumes
+      - name: check for uncommitted changes
+        run: git diff --exit-code
