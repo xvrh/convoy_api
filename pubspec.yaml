@@ -1,0 +1,20 @@
+name: convoy_api
+description: A Convoy Dart client library generated from the OpenApi Specification.
+version: 1.0.0
+repository: https://github.com/xvrh/convoy_api
+
+environment:
+  sdk: ^3.12.0-210.2.beta
+
+dependencies:
+  http:
+  path:
+
+dev_dependencies:
+  build_runner:
+  collection:
+  dart_style:
+  json_annotation:
+  json_serializable:
+  lints:
+  test:

@@ -1,0 +1,71 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: convoy
+      POSTGRES_PASSWORD: pg_password
+      POSTGRES_DB: convoy
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U convoy"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - convoy_net
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - convoy_net
+
+  convoy-migrate:
+    image: getconvoy/convoy:latest
+    command: ["migrate", "up", "--config", "/convoy.json"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./convoy.json:/convoy.json:ro
+    networks:
+      - convoy_net
+
+  convoy:
+    image: getconvoy/convoy:latest
+    command: ["server", "--config", "/convoy.json"]
+    depends_on:
+      convoy-migrate:
+        condition: service_completed_successfully
+    ports:
+      - "5005:5005"
+    volumes:
+      - ./convoy.json:/convoy.json:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:5005/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    networks:
+      - convoy_net
+
+  convoy-agent:
+    image: getconvoy/convoy:latest
+    command: ["agent", "--config", "/convoy.json"]
+    depends_on:
+      convoy-migrate:
+        condition: service_completed_successfully
+    volumes:
+      - ./convoy.json:/convoy.json:ro
+    networks:
+      - convoy_net
+
+networks:
+  convoy_net:
+    driver: bridge
