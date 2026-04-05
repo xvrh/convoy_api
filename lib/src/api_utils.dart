@@ -8,9 +8,9 @@ export 'package:http/http.dart' show MultipartFile;
 class ApiClient {
   final Client _client;
   final Uri _baseUri;
-  final String? authorization;
+  final String? apiKey;
 
-  ApiClient(this._baseUri, this._client, {required this.authorization});
+  ApiClient(this._baseUri, this._client, {required this.apiKey});
 
   Future<T> send<T>(
     String method,
@@ -60,8 +60,8 @@ class ApiClient {
       request.headers.addAll(headers);
     }
 
-    if (authorization case var authorization?) {
-      request.headers['Authorization'] = authorization;
+    if (apiKey case var apiKey?) {
+      request.headers['Authorization'] = 'Bearer $apiKey';
     }
 
     var response = await Response.fromStream(await _client.send(request));

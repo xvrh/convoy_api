@@ -6,7 +6,7 @@ Future<void> main() async {
   final api = ConvoyClient(
     httpClient,
     Uri.parse('http://localhost:5005/api'),
-    apiKey: 'Bearer YOUR_PROJECT_API_KEY',
+    apiKey: 'YOUR_PROJECT_API_KEY',
   );
 
   final created = await api.createEndpoint(

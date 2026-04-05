@@ -215,7 +215,7 @@ makeConvoyClient() async {
   final api = ConvoyClient(
     httpClient,
     convoyApiBaseUrl,
-    apiKey: 'Bearer ${creds.apiKey}',
+    apiKey: creds.apiKey,
   );
   return (api: api, httpClient: httpClient, projectId: creds.projectId);
 }
