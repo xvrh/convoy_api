@@ -18,6 +18,9 @@ jobs:
       - run: dart analyze --fatal-infos .
       - run: dart tool/generate_client.dart
       - run: docker compose -f test/docker-compose.yml up --wait
+      - run: dart tool/bootstrap_convoy.dart
+        env:
+          CONVOY_BASE_URL: http://localhost:5005
       - run: dart test
         env:
           CONVOY_BASE_URL: http://localhost:5005
