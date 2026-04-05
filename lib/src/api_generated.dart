@@ -11,7 +11,7 @@ class ConvoyClient {
   final ApiClient _client;
 
   ConvoyClient(Client httpClient, Uri baseUri, {required String? apiKey})
-    : _client = ApiClient(baseUri, httpClient, authorization: apiKey);
+    : _client = ApiClient(baseUri, httpClient, apiKey: apiKey);
 
   /// This endpoint fetches an endpoints
   Future<dynamic> getEndpoints({

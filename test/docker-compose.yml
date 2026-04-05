@@ -46,6 +46,10 @@ services:
       - "5005:5005"
     volumes:
       - ./convoy.json:/convoy.json:ro
+    extra_hosts:
+      # Required on Linux: Docker Desktop auto-provides host.docker.internal,
+      # plain Linux Docker (GitHub Actions runners) does not.
+      - "host.docker.internal:host-gateway"
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:5005/health"]
       interval: 5s
@@ -63,6 +67,8 @@ services:
         condition: service_completed_successfully
     volumes:
       - ./convoy.json:/convoy.json:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - convoy_net
 

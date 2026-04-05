@@ -1,39 +1,70 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# convoy_api
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/tools/pub/writing-package-pages).
-
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/tools/pub/create-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/to/develop-packages).
--->
-
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
-
-## Features
-
-TODO: List what your package can do. Maybe include images, gifs, or videos.
-
-## Getting started
-
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+A Dart client for the [Convoy](https://getconvoy.io) webhooks gateway, generated
+from Convoy's official OpenAPI specification.
 
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
-
 ```dart
-const like = 'sample';
+import 'package:convoy_api/convoy_api.dart';
+import 'package:http/http.dart';
+
+Future<void> main() async {
+  final httpClient = Client();
+  final api = ConvoyClient(
+    httpClient,
+    Uri.parse('http://localhost:5005/api'),
+    apiKey: 'YOUR_PROJECT_API_KEY',
+  );
+
+  final created = await api.createEndpoint(
+    projectId: 'YOUR_PROJECT_ID',
+    body: ModelsCreateEndpoint(
+      name: 'customer-42-webhook',
+      url: 'https://customer.example.com/webhook',
+      ownerId: 'customer-42',
+    ),
+  );
+  print(created);
+
+  httpClient.close();
+}
 ```
 
-## Additional information
+The base URL must include the `/api` path segment. The client prepends
+`Bearer ` to the API key automatically.
 
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+## Regenerating the client
+
+The client is generated from `tool/convoy-openapi.json`. To refresh it against a
+newer spec:
+
+```bash
+dart tool/download.dart        # fetches the latest spec
+dart tool/generate_client.dart # regenerates lib/src/api_generated.dart
+```
+
+## Running the tests
+
+The test suite runs against a real Convoy instance via Docker Compose. Start the
+stack (Postgres + Redis + Convoy server + Convoy agent):
+
+```bash
+docker compose -f test/docker-compose.yml up --wait
+```
+
+Then run the tests:
+
+```bash
+CONVOY_BASE_URL=http://localhost:5005 dart test
+```
+
+The first run bootstraps a superuser, organisation, and "smoke" project via
+Convoy's admin UI API and caches the resulting credentials to
+`test/.convoy-bootstrap.json` so subsequent runs are fast.
+
+To tear the stack down:
+
+```bash
+docker compose -f test/docker-compose.yml down --volumes
+```
