@@ -29,7 +29,7 @@ void main() {
     addTearDown(receiver.close);
 
     // 2. Create an endpoint pointing at the local receiver.
-    final endpointResp = await api.createEndpoint(
+    final endpoint = await api.createEndpoint(
       projectId: projectId,
       body: ModelsCreateEndpoint(
         name: randomName('event-endpoint'),
@@ -37,8 +37,7 @@ void main() {
         ownerId: 'owner-${randomName('event')}',
       ),
     );
-    final endpointId =
-        (((endpointResp as Map)['data'] as Map)['uid'] as String);
+    final endpointId = endpoint.uid!;
     addTearDown(() async {
       try {
         await api.deleteEndpoint(
@@ -49,15 +48,14 @@ void main() {
     });
 
     // 3. Subscribe the endpoint.
-    final subResp = await api.createSubscription(
+    final sub = await api.createSubscription(
       projectId: projectId,
       body: ModelsCreateSubscription(
         name: randomName('event-sub'),
         endpointId: endpointId,
       ),
     );
-    final subId = (((subResp as Map)['data'] as Map)['uid'] as String);
-    expect(subId, isNotEmpty);
+    expect(sub.uid, isNotEmpty);
 
     // 4. Send an event. createEndpointEvent returns {status, message, data:200}
     //    rather than the event body — the event is queued asynchronously and
@@ -99,7 +97,7 @@ void main() {
           endpointId: [endpointId],
         );
         final deliveries =
-            (((resp as Map)['data'] as Map)['content'] as List).cast<Map>();
+            (resp.content as List?)?.cast<Map<String, Object?>>() ?? [];
         if (deliveries.isEmpty) return null;
         final status = deliveries.first['status'] as String?;
         return status == 'Success' ? status : null;

@@ -18,7 +18,7 @@ class ConvoyClient {
       );
 
   /// This endpoint fetches an endpoints
-  Future<dynamic> getEndpoints({
+  Future<ModelsPagedResponse> getEndpoints({
     required String projectId,
     String? direction,
     String? nextPageCursor,
@@ -28,7 +28,7 @@ class ConvoyClient {
     String? q,
     String? sort,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'get',
       'v1/projects/{projectID}/endpoints',
       pathParameters: {'projectID': projectId},
@@ -42,41 +42,50 @@ class ConvoyClient {
         if (sort != null) 'sort': sort,
       },
     );
+    return ModelsPagedResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint creates an endpoint
-  Future<dynamic> createEndpoint({
+  Future<ModelsEndpointResponse> createEndpoint({
     required String projectId,
     required ModelsCreateEndpoint body,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'post',
       'v1/projects/{projectID}/endpoints',
       pathParameters: {'projectID': projectId},
       body: body.toJson(),
     );
+    return ModelsEndpointResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint tests the OAuth2 connection by attempting to exchange a
   /// token
-  Future<dynamic> testoAuth2Connection({
+  Future<ModelsTestOAuth2Response> testoAuth2Connection({
     required String projectId,
     required ModelsTestOAuth2Request body,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'post',
       'v1/projects/{projectID}/endpoints/oauth2/test',
       pathParameters: {'projectID': projectId},
       body: body.toJson(),
     );
+    return ModelsTestOAuth2Response.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint deletes an endpoint
-  Future<dynamic> deleteEndpoint({
+  Future<void> deleteEndpoint({
     required String projectId,
     required String endpointId,
   }) async {
-    return await _client.send(
+    await _client.send(
       'delete',
       'v1/projects/{projectID}/endpoints/{endpointID}',
       pathParameters: {'projectID': projectId, 'endpointID': endpointId},
@@ -84,131 +93,171 @@ class ConvoyClient {
   }
 
   /// This endpoint fetches an endpoint
-  Future<dynamic> getEndpoint({
+  Future<ModelsEndpointResponse> getEndpoint({
     required String projectId,
     required String endpointId,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'get',
       'v1/projects/{projectID}/endpoints/{endpointID}',
       pathParameters: {'projectID': projectId, 'endpointID': endpointId},
     );
+    return ModelsEndpointResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint updates an endpoint
-  Future<dynamic> updateEndpoint({
+  Future<ModelsEndpointResponse> updateEndpoint({
     required String projectId,
     required String endpointId,
     required ModelsUpdateEndpoint body,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'put',
       'v1/projects/{projectID}/endpoints/{endpointID}',
       pathParameters: {'projectID': projectId, 'endpointID': endpointId},
       body: body.toJson(),
     );
+    return ModelsEndpointResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// Activated an inactive endpoint
-  Future<dynamic> activateEndpoint({
+  Future<ModelsEndpointResponse> activateEndpoint({
     required String projectId,
     required String endpointId,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'post',
       'v1/projects/{projectID}/endpoints/{endpointID}/activate',
       pathParameters: {'projectID': projectId, 'endpointID': endpointId},
     );
+    return ModelsEndpointResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint expires and re-generates the endpoint secret.
-  Future<dynamic> expireSecret({
+  Future<ModelsEndpointResponse> expireSecret({
     required String projectId,
     required String endpointId,
     required ModelsExpireSecret body,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'put',
       'v1/projects/{projectID}/endpoints/{endpointID}/expire_secret',
       pathParameters: {'projectID': projectId, 'endpointID': endpointId},
       body: body.toJson(),
     );
+    return ModelsEndpointResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// Toggles an endpoint's status between active and paused states
-  Future<dynamic> pauseEndpoint({
+  Future<ModelsEndpointResponse> pauseEndpoint({
     required String projectId,
     required String endpointId,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'put',
       'v1/projects/{projectID}/endpoints/{endpointID}/pause',
       pathParameters: {'projectID': projectId, 'endpointID': endpointId},
     );
+    return ModelsEndpointResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint fetches the project's event types
-  Future<dynamic> getEventTypes(String projectId) async {
-    return await _client.send(
+  Future<List<ModelsEventTypeResponse>> getEventTypes(String projectId) async {
+    var response = await _client.send(
       'get',
       'v1/projects/{projectID}/event-types',
       pathParameters: {'projectID': projectId},
     );
+    return ((response as Map<String, Object?>)['data'] as List<Object?>?)
+            ?.map(
+              (i) => ModelsEventTypeResponse.fromJson(
+                i as Map<String, Object?>? ?? const {},
+              ),
+            )
+            .toList() ??
+        [];
   }
 
   /// This endpoint creates an event type
-  Future<dynamic> createEventType({
+  Future<ModelsEventTypeResponse> createEventType({
     required String projectId,
     required ModelsCreateEventType body,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'post',
       'v1/projects/{projectID}/event-types',
       pathParameters: {'projectID': projectId},
       body: body.toJson(),
     );
+    return ModelsEventTypeResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint imports event types from an OpenAPI specification
-  Future<dynamic> importOpenApiSpec({
+  Future<List<ModelsEventTypeResponse>> importOpenApiSpec({
     required String projectId,
     required ModelsImportOpenAPISpec body,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'post',
       'v1/projects/{projectID}/event-types/import',
       pathParameters: {'projectID': projectId},
       body: body.toJson(),
     );
+    return ((response as Map<String, Object?>)['data'] as List<Object?>?)
+            ?.map(
+              (i) => ModelsEventTypeResponse.fromJson(
+                i as Map<String, Object?>? ?? const {},
+              ),
+            )
+            .toList() ??
+        [];
   }
 
   /// This endpoint updates an event type
-  Future<dynamic> updateEventType({
+  Future<ModelsEventTypeResponse> updateEventType({
     required String projectId,
     required ModelsUpdateEventType body,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'put',
       'v1/projects/{projectID}/event-types/{eventTypeId}',
       pathParameters: {'projectID': projectId},
       body: body.toJson(),
     );
+    return ModelsEventTypeResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint deprecates an event type
-  Future<dynamic> deprecateEventType({
+  Future<ModelsEventTypeResponse> deprecateEventType({
     required String projectId,
     required String eventTypeId,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'post',
       'v1/projects/{projectID}/event-types/{eventTypeId}/deprecate',
       pathParameters: {'projectID': projectId, 'eventTypeId': eventTypeId},
     );
+    return ModelsEventTypeResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint retrieves all event deliveries paginated.
-  Future<dynamic> getEventDeliveriesPaged({
+  Future<ModelsPagedResponse> getEventDeliveriesPaged({
     required String projectId,
     String? direction,
     String? endDate,
@@ -224,7 +273,7 @@ class ConvoyClient {
     List<String>? status,
     String? subscriptionId,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'get',
       'v1/projects/{projectID}/eventdeliveries',
       pathParameters: {'projectID': projectId},
@@ -245,10 +294,13 @@ class ConvoyClient {
         if (subscriptionId != null) 'subscriptionId': subscriptionId,
       },
     );
+    return ModelsPagedResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint batch retries multiple event deliveries at once.
-  Future<dynamic> batchRetryEventDelivery({
+  Future<void> batchRetryEventDelivery({
     required String projectId,
     String? direction,
     String? endDate,
@@ -264,7 +316,7 @@ class ConvoyClient {
     List<String>? status,
     String? subscriptionId,
   }) async {
-    return await _client.send(
+    await _client.send(
       'post',
       'v1/projects/{projectID}/eventdeliveries/batchretry',
       pathParameters: {'projectID': projectId},
@@ -288,11 +340,11 @@ class ConvoyClient {
   }
 
   /// This endpoint enables you retry a previously successful event delivery
-  Future<dynamic> forceResendEventDeliveries({
+  Future<void> forceResendEventDeliveries({
     required String projectId,
     required ModelsIDs body,
   }) async {
-    return await _client.send(
+    await _client.send(
       'post',
       'v1/projects/{projectID}/eventdeliveries/forceresend',
       pathParameters: {'projectID': projectId},
@@ -301,11 +353,11 @@ class ConvoyClient {
   }
 
   /// This endpoint fetches an event delivery.
-  Future<dynamic> getEventDelivery({
+  Future<ModelsEventDeliveryResponse> getEventDelivery({
     required String projectId,
     required String eventDeliveryId,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'get',
       'v1/projects/{projectID}/eventdeliveries/{eventDeliveryID}',
       pathParameters: {
@@ -313,14 +365,17 @@ class ConvoyClient {
         'eventDeliveryID': eventDeliveryId,
       },
     );
+    return ModelsEventDeliveryResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint fetches an app message's delivery attempts
-  Future<dynamic> getDeliveryAttempts({
+  Future<List<DatastoreDeliveryAttempt>> getDeliveryAttempts({
     required String projectId,
     required String eventDeliveryId,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'get',
       'v1/projects/{projectID}/eventdeliveries/{eventDeliveryID}/deliveryattempts',
       pathParameters: {
@@ -328,15 +383,23 @@ class ConvoyClient {
         'eventDeliveryID': eventDeliveryId,
       },
     );
+    return ((response as Map<String, Object?>)['data'] as List<Object?>?)
+            ?.map(
+              (i) => DatastoreDeliveryAttempt.fromJson(
+                i as Map<String, Object?>? ?? const {},
+              ),
+            )
+            .toList() ??
+        [];
   }
 
   /// This endpoint fetches an app event delivery attempt
-  Future<dynamic> getDeliveryAttempt({
+  Future<DatastoreDeliveryAttempt> getDeliveryAttempt({
     required String projectId,
     required String eventDeliveryId,
     required String deliveryAttemptId,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'get',
       'v1/projects/{projectID}/eventdeliveries/{eventDeliveryID}/deliveryattempts/{deliveryAttemptID}',
       pathParameters: {
@@ -345,14 +408,17 @@ class ConvoyClient {
         'deliveryAttemptID': deliveryAttemptId,
       },
     );
+    return DatastoreDeliveryAttempt.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint retries an event delivery.
-  Future<dynamic> resendEventDelivery({
+  Future<ModelsEventDeliveryResponse> resendEventDelivery({
     required String projectId,
     required String eventDeliveryId,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'put',
       'v1/projects/{projectID}/eventdeliveries/{eventDeliveryID}/resend',
       pathParameters: {
@@ -360,10 +426,13 @@ class ConvoyClient {
         'eventDeliveryID': eventDeliveryId,
       },
     );
+    return ModelsEventDeliveryResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint fetches app events with pagination
-  Future<dynamic> getEventsPaged({
+  Future<ModelsPagedResponse> getEventsPaged({
     required String projectId,
     String? direction,
     String? endDate,
@@ -377,7 +446,7 @@ class ConvoyClient {
     List<String>? sourceId,
     String? startDate,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'get',
       'v1/projects/{projectID}/events',
       pathParameters: {'projectID': projectId},
@@ -396,14 +465,17 @@ class ConvoyClient {
         if (startDate != null) 'startDate': startDate,
       },
     );
+    return ModelsPagedResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint creates an endpoint event
-  Future<dynamic> createEndpointEvent({
+  Future<void> createEndpointEvent({
     required String projectId,
     required ModelsCreateEvent body,
   }) async {
-    return await _client.send(
+    await _client.send(
       'post',
       'v1/projects/{projectID}/events',
       pathParameters: {'projectID': projectId},
@@ -412,7 +484,7 @@ class ConvoyClient {
   }
 
   /// This endpoint replays multiple events at once.
-  Future<dynamic> batchReplayEvents({
+  Future<String> batchReplayEvents({
     required String projectId,
     String? direction,
     String? endDate,
@@ -426,7 +498,7 @@ class ConvoyClient {
     List<String>? sourceId,
     String? startDate,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'post',
       'v1/projects/{projectID}/events/batchreplay',
       pathParameters: {'projectID': projectId},
@@ -445,19 +517,23 @@ class ConvoyClient {
         if (startDate != null) 'startDate': startDate,
       },
     );
+    return (response as Map<String, Object?>)['data'] as String? ?? '';
   }
 
   /// This endpoint creates a event that is broadcast to every endpoint whose
   /// subscription matches the given event type.
-  Future<dynamic> createBroadcastEvent({
+  Future<ModelsEventResponse> createBroadcastEvent({
     required String projectId,
     required ModelsBroadcastEvent body,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'post',
       'v1/projects/{projectID}/events/broadcast',
       pathParameters: {'projectID': projectId},
       body: body.toJson(),
+    );
+    return ModelsEventResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
     );
   }
 
@@ -479,11 +555,11 @@ class ConvoyClient {
   }
 
   /// This endpoint uses the owner_id to fan out an event to multiple endpoints.
-  Future<dynamic> createEndpointFanoutEvent({
+  Future<void> createEndpointFanoutEvent({
     required String projectId,
     required ModelsFanoutEvent body,
   }) async {
-    return await _client.send(
+    await _client.send(
       'post',
       'v1/projects/{projectID}/events/fanout',
       pathParameters: {'projectID': projectId},
@@ -492,31 +568,37 @@ class ConvoyClient {
   }
 
   /// This endpoint retrieves an event
-  Future<dynamic> getEndpointEvent({
+  Future<ModelsEventResponse> getEndpointEvent({
     required String projectId,
     required String eventId,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'get',
       'v1/projects/{projectID}/events/{eventID}',
       pathParameters: {'projectID': projectId, 'eventID': eventId},
     );
+    return ModelsEventResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint replays an event afresh assuming it is a new event.
-  Future<dynamic> replayEndpointEvent({
+  Future<ModelsEventResponse> replayEndpointEvent({
     required String projectId,
     required String eventId,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'put',
       'v1/projects/{projectID}/events/{eventID}/replay',
       pathParameters: {'projectID': projectId, 'eventID': eventId},
     );
+    return ModelsEventResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint fetches meta events with pagination
-  Future<dynamic> getMetaEventsPaged({
+  Future<ModelsPagedResponse> getMetaEventsPaged({
     required String projectId,
     String? direction,
     String? endDate,
@@ -526,7 +608,7 @@ class ConvoyClient {
     String? sort,
     String? startDate,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'get',
       'v1/projects/{projectID}/meta-events',
       pathParameters: {'projectID': projectId},
@@ -540,34 +622,43 @@ class ConvoyClient {
         if (startDate != null) 'startDate': startDate,
       },
     );
+    return ModelsPagedResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint retrieves a meta event
-  Future<dynamic> getMetaEvent({
+  Future<ModelsMetaEventResponse> getMetaEvent({
     required String projectId,
     required String metaEventId,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'get',
       'v1/projects/{projectID}/meta-events/{metaEventID}',
       pathParameters: {'projectID': projectId, 'metaEventID': metaEventId},
     );
+    return ModelsMetaEventResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint retries a meta event
-  Future<dynamic> resendMetaEvent({
+  Future<ModelsMetaEventResponse> resendMetaEvent({
     required String projectId,
     required String metaEventId,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'put',
       'v1/projects/{projectID}/meta-events/{metaEventID}/resend',
       pathParameters: {'projectID': projectId, 'metaEventID': metaEventId},
     );
+    return ModelsMetaEventResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint fetches multiple portal links
-  Future<dynamic> loadPortalLinksPaged({
+  Future<ModelsPagedResponse> loadPortalLinksPaged({
     required String projectId,
     String? direction,
     String? nextPageCursor,
@@ -577,7 +668,7 @@ class ConvoyClient {
     String? q,
     String? sort,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'get',
       'v1/projects/{projectID}/portal-links',
       pathParameters: {'projectID': projectId},
@@ -591,65 +682,78 @@ class ConvoyClient {
         if (sort != null) 'sort': sort,
       },
     );
+    return ModelsPagedResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint creates a portal link
-  Future<dynamic> createPortalLink({
+  Future<DatastorePortalLinkResponse> createPortalLink({
     required String projectId,
     required DatastoreCreatePortalLinkRequest body,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'post',
       'v1/projects/{projectID}/portal-links',
       pathParameters: {'projectID': projectId},
       body: body.toJson(),
     );
+    return DatastorePortalLinkResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint retrieves a portal link by its id.
-  Future<dynamic> getPortalLink({
+  Future<DatastorePortalLinkResponse> getPortalLink({
     required String projectId,
     required String portalLinkId,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'get',
       'v1/projects/{projectID}/portal-links/{portalLinkID}',
       pathParameters: {'projectID': projectId, 'portalLinkID': portalLinkId},
     );
+    return DatastorePortalLinkResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint updates a portal link
-  Future<dynamic> updatePortalLink({
+  Future<DatastorePortalLinkResponse> updatePortalLink({
     required String projectId,
     required String portalLinkId,
     required DatastoreUpdatePortalLinkRequest body,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'put',
       'v1/projects/{projectID}/portal-links/{portalLinkID}',
       pathParameters: {'projectID': projectId, 'portalLinkID': portalLinkId},
       body: body.toJson(),
     );
+    return DatastorePortalLinkResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint retrieves a portal link auth token
-  Future<dynamic> refreshPortalLinkAuthToken({
+  Future<String> refreshPortalLinkAuthToken({
     required String projectId,
     required String portalLinkId,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'get',
       'v1/projects/{projectID}/portal-links/{portalLinkID}/refresh_token',
       pathParameters: {'projectID': projectId, 'portalLinkID': portalLinkId},
     );
+    return (response as Map<String, Object?>)['data'] as String? ?? '';
   }
 
   /// This endpoint revokes a portal link
-  Future<dynamic> revokePortalLink({
+  Future<void> revokePortalLink({
     required String projectId,
     required String portalLinkId,
   }) async {
-    return await _client.send(
+    await _client.send(
       'put',
       'v1/projects/{projectID}/portal-links/{portalLinkID}/revoke',
       pathParameters: {'projectID': projectId, 'portalLinkID': portalLinkId},
@@ -657,7 +761,7 @@ class ConvoyClient {
   }
 
   /// This endpoint fetches multiple sources
-  Future<dynamic> loadSourcesPaged({
+  Future<ModelsPagedResponse> loadSourcesPaged({
     required String projectId,
     String? direction,
     String? nextPageCursor,
@@ -667,7 +771,7 @@ class ConvoyClient {
     String? sort,
     String? type,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'get',
       'v1/projects/{projectID}/sources',
       pathParameters: {'projectID': projectId},
@@ -681,41 +785,50 @@ class ConvoyClient {
         if (type != null) 'type': type,
       },
     );
+    return ModelsPagedResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint creates a source
-  Future<dynamic> createSource({
+  Future<ModelsSourceResponse> createSource({
     required String projectId,
     required ModelsCreateSource body,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'post',
       'v1/projects/{projectID}/sources',
       pathParameters: {'projectID': projectId},
       body: body.toJson(),
     );
+    return ModelsSourceResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint validates that a filter will match a certain payload
   /// structure.
-  Future<dynamic> validateSourceFunction({
+  Future<ModelsFunctionResponse> validateSourceFunction({
     required String projectId,
     required ModelsFunctionRequest body,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'post',
       'v1/projects/{projectID}/sources/test_function',
       pathParameters: {'projectID': projectId},
       body: body.toJson(),
     );
+    return ModelsFunctionResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint deletes a source
-  Future<dynamic> deleteSource({
+  Future<void> deleteSource({
     required String projectId,
     required String sourceId,
   }) async {
-    return await _client.send(
+    await _client.send(
       'delete',
       'v1/projects/{projectID}/sources/{sourceID}',
       pathParameters: {'projectID': projectId, 'sourceID': sourceId},
@@ -723,33 +836,39 @@ class ConvoyClient {
   }
 
   /// This endpoint retrieves a source by its id
-  Future<dynamic> getSource({
+  Future<ModelsSourceResponse> getSource({
     required String projectId,
     required String sourceId,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'get',
       'v1/projects/{projectID}/sources/{sourceID}',
       pathParameters: {'projectID': projectId, 'sourceID': sourceId},
     );
+    return ModelsSourceResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint updates a source
-  Future<dynamic> updateSource({
+  Future<ModelsSourceResponse> updateSource({
     required String projectId,
     required String sourceId,
     required ModelsUpdateSource body,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'put',
       'v1/projects/{projectID}/sources/{sourceID}',
       pathParameters: {'projectID': projectId, 'sourceID': sourceId},
       body: body.toJson(),
     );
+    return ModelsSourceResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint fetches all the subscriptions
-  Future<dynamic> getSubscriptions({
+  Future<ModelsPagedResponse> getSubscriptions({
     required String projectId,
     String? direction,
     List<String>? endpointId,
@@ -759,7 +878,7 @@ class ConvoyClient {
     String? prevPageCursor,
     String? sort,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'get',
       'v1/projects/{projectID}/subscriptions',
       pathParameters: {'projectID': projectId},
@@ -774,54 +893,64 @@ class ConvoyClient {
         if (sort != null) 'sort': sort,
       },
     );
+    return ModelsPagedResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint creates a subscriptions
-  Future<dynamic> createSubscription({
+  Future<ModelsSubscriptionResponse> createSubscription({
     required String projectId,
     required ModelsCreateSubscription body,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'post',
       'v1/projects/{projectID}/subscriptions',
       pathParameters: {'projectID': projectId},
       body: body.toJson(),
     );
+    return ModelsSubscriptionResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint validates that a filter will match a certain payload
   /// structure.
-  Future<dynamic> testSubscriptionFilter({
+  Future<bool> testSubscriptionFilter({
     required String projectId,
     required ModelsTestFilter body,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'post',
       'v1/projects/{projectID}/subscriptions/test_filter',
       pathParameters: {'projectID': projectId},
       body: body.toJson(),
     );
+    return (response as Map<String, Object?>)['data'] as bool? ?? false;
   }
 
   /// This endpoint test runs a transform function against a payload.
-  Future<dynamic> testSubscriptionFunction({
+  Future<ModelsFunctionResponse> testSubscriptionFunction({
     required String projectId,
     required ModelsFunctionRequest body,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'post',
       'v1/projects/{projectID}/subscriptions/test_function',
       pathParameters: {'projectID': projectId},
       body: body.toJson(),
     );
+    return ModelsFunctionResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint deletes a subscription
-  Future<dynamic> deleteSubscription({
+  Future<void> deleteSubscription({
     required String projectId,
     required String subscriptionId,
   }) async {
-    return await _client.send(
+    await _client.send(
       'delete',
       'v1/projects/{projectID}/subscriptions/{subscriptionID}',
       pathParameters: {
@@ -832,11 +961,11 @@ class ConvoyClient {
   }
 
   /// This endpoint retrieves a single subscription
-  Future<dynamic> getSubscription({
+  Future<ModelsSubscriptionResponse> getSubscription({
     required String projectId,
     required String subscriptionId,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'get',
       'v1/projects/{projectID}/subscriptions/{subscriptionID}',
       pathParameters: {
@@ -844,15 +973,18 @@ class ConvoyClient {
         'subscriptionID': subscriptionId,
       },
     );
+    return ModelsSubscriptionResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint updates a subscription
-  Future<dynamic> updateSubscription({
+  Future<ModelsSubscriptionResponse> updateSubscription({
     required String projectId,
     required String subscriptionId,
     required ModelsUpdateSubscription body,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'put',
       'v1/projects/{projectID}/subscriptions/{subscriptionID}',
       pathParameters: {
@@ -861,14 +993,17 @@ class ConvoyClient {
       },
       body: body.toJson(),
     );
+    return ModelsSubscriptionResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint fetches all filters for a subscription
-  Future<dynamic> getFilters({
+  Future<List<ModelsFilterResponse>> getFilters({
     required String projectId,
     required String subscriptionId,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'get',
       'v1/projects/{projectID}/subscriptions/{subscriptionID}/filters',
       pathParameters: {
@@ -876,15 +1011,23 @@ class ConvoyClient {
         'subscriptionID': subscriptionId,
       },
     );
+    return ((response as Map<String, Object?>)['data'] as List<Object?>?)
+            ?.map(
+              (i) => ModelsFilterResponse.fromJson(
+                i as Map<String, Object?>? ?? const {},
+              ),
+            )
+            .toList() ??
+        [];
   }
 
   /// This endpoint creates a new filter for a subscription
-  Future<dynamic> createFilter({
+  Future<ModelsFilterResponse> createFilter({
     required String projectId,
     required String subscriptionId,
     required ModelsCreateFilterRequest body,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'post',
       'v1/projects/{projectID}/subscriptions/{subscriptionID}/filters',
       pathParameters: {
@@ -893,15 +1036,18 @@ class ConvoyClient {
       },
       body: body.toJson(),
     );
+    return ModelsFilterResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint creates multiple filters for a subscription
-  Future<dynamic> bulkCreateFilters({
+  Future<List<ModelsFilterResponse>> bulkCreateFilters({
     required String projectId,
     required String subscriptionId,
     required List<ModelsCreateFilterRequest> body,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'post',
       'v1/projects/{projectID}/subscriptions/{subscriptionID}/filters/bulk',
       pathParameters: {
@@ -910,15 +1056,23 @@ class ConvoyClient {
       },
       body: body.map((i) => i.toJson()).toList(),
     );
+    return ((response as Map<String, Object?>)['data'] as List<Object?>?)
+            ?.map(
+              (i) => ModelsFilterResponse.fromJson(
+                i as Map<String, Object?>? ?? const {},
+              ),
+            )
+            .toList() ??
+        [];
   }
 
   /// This endpoint updates multiple filters for a subscription
-  Future<dynamic> bulkUpdateFilters({
+  Future<List<ModelsFilterResponse>> bulkUpdateFilters({
     required String projectId,
     required String subscriptionId,
     required List<ModelsBulkUpdateFilterRequest> body,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'put',
       'v1/projects/{projectID}/subscriptions/{subscriptionID}/filters/bulk_update',
       pathParameters: {
@@ -927,16 +1081,24 @@ class ConvoyClient {
       },
       body: body.map((i) => i.toJson()).toList(),
     );
+    return ((response as Map<String, Object?>)['data'] as List<Object?>?)
+            ?.map(
+              (i) => ModelsFilterResponse.fromJson(
+                i as Map<String, Object?>? ?? const {},
+              ),
+            )
+            .toList() ??
+        [];
   }
 
   /// This endpoint tests a filter against a payload
-  Future<dynamic> testFilter({
+  Future<ModelsTestFilterResponse> testFilter({
     required String projectId,
     required String subscriptionId,
     required String eventType,
     required ModelsTestFilterRequest body,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'post',
       'v1/projects/{projectID}/subscriptions/{subscriptionID}/filters/test/{eventType}',
       pathParameters: {
@@ -946,15 +1108,18 @@ class ConvoyClient {
       },
       body: body.toJson(),
     );
+    return ModelsTestFilterResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint deletes a filter
-  Future<dynamic> deleteFilter({
+  Future<void> deleteFilter({
     required String projectId,
     required String subscriptionId,
     required String filterId,
   }) async {
-    return await _client.send(
+    await _client.send(
       'delete',
       'v1/projects/{projectID}/subscriptions/{subscriptionID}/filters/{filterID}',
       pathParameters: {
@@ -966,12 +1131,12 @@ class ConvoyClient {
   }
 
   /// This endpoint retrieves a single filter
-  Future<dynamic> getFilter({
+  Future<ModelsFilterResponse> getFilter({
     required String projectId,
     required String subscriptionId,
     required String filterId,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'get',
       'v1/projects/{projectID}/subscriptions/{subscriptionID}/filters/{filterID}',
       pathParameters: {
@@ -980,16 +1145,19 @@ class ConvoyClient {
         'filterID': filterId,
       },
     );
+    return ModelsFilterResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+    );
   }
 
   /// This endpoint updates an existing filter
-  Future<dynamic> updateFilter({
+  Future<ModelsFilterResponse> updateFilter({
     required String projectId,
     required String subscriptionId,
     required String filterId,
     required ModelsUpdateFilterRequest body,
   }) async {
-    return await _client.send(
+    var response = await _client.send(
       'put',
       'v1/projects/{projectID}/subscriptions/{subscriptionID}/filters/{filterID}',
       pathParameters: {
@@ -998,6 +1166,9 @@ class ConvoyClient {
         'filterID': filterId,
       },
       body: body.toJson(),
+    );
+    return ModelsFilterResponse.fromJson(
+      (response as Map<String, Object?>)['data'] as Map<String, Object?>,
     );
   }
 }
