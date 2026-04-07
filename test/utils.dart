@@ -11,6 +11,10 @@ final Uri convoyBaseUrl = Uri.parse(
 );
 
 /// Base URL for the public Convoy API (prefixed with `/api`).
+///
+/// Used only by internal helpers that make raw HTTP calls. Client code should
+/// pass [convoyBaseUrl] to both [ConvoyClient] and [ConvoyAccountClient] — the
+/// clients prepend the correct path prefix internally.
 Uri get convoyApiBaseUrl =>
     convoyBaseUrl.replace(path: '${convoyBaseUrl.path}/api');
 
@@ -214,7 +218,7 @@ makeConvoyClient() async {
   final httpClient = Client();
   final api = ConvoyClient(
     httpClient,
-    convoyApiBaseUrl,
+    convoyBaseUrl,
     apiKey: creds.apiKey,
   );
   return (api: api, httpClient: httpClient, projectId: creds.projectId);

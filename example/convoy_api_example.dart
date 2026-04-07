@@ -5,7 +5,7 @@ Future<void> main() async {
   final httpClient = Client();
   final api = ConvoyClient(
     httpClient,
-    Uri.parse('http://localhost:5005/api'),
+    Uri.parse('http://localhost:5005'),
     apiKey: 'YOUR_PROJECT_API_KEY',
   );
 

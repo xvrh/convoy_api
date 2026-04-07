@@ -279,7 +279,7 @@ class $_className {
   final ApiClient _client;
   
   $_className(Client httpClient, Uri baseUri, {required String? apiKey}):
-    _client = ApiClient(baseUri, httpClient, apiKey: apiKey);
+    _client = ApiClient(baseUri.replace(path: '\${baseUri.path}/api'.replaceAll('//', '/')), httpClient, apiKey: apiKey);
 ''');
       for (var operation in operations) {
         buffer.writeln(operation.toCode());
