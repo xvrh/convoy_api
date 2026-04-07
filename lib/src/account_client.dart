@@ -143,6 +143,24 @@ class ConvoyAccountClient {
     ];
   }
 
+  /// Create a new organisation.
+  Future<Organisation> createOrganisation({
+    required String accessToken,
+    required String name,
+  }) async {
+    final body = await _send(
+      'POST',
+      '/ui/organisations',
+      accessToken: accessToken,
+      body: {'name': name},
+    );
+    final data = body['data'] as Map<String, Object?>;
+    return Organisation(
+      uid: data['uid'] as String,
+      name: data['name'] as String,
+    );
+  }
+
   /// List projects in an organisation.
   Future<List<Project>> listProjects({
     required String accessToken,

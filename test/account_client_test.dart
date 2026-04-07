@@ -55,6 +55,30 @@ void main() {
     expect(orgs.first.name, isNotEmpty);
   });
 
+  test('create organisation', () async {
+    final loginResult = await accountClient.login(
+      username: _superuserEmail,
+      password: _superuserPassword,
+    );
+    final token = loginResult.accessToken;
+
+    final orgName = randomName('org');
+    try {
+      final org = await accountClient.createOrganisation(
+        accessToken: token,
+        name: orgName,
+      );
+      expect(org.uid, isNotEmpty);
+      expect(org.name, orgName);
+
+      final orgs = await accountClient.listOrganisations(accessToken: token);
+      expect(orgs.any((o) => o.uid == org.uid && o.name == orgName), isTrue);
+    } on ApiException catch (e) {
+      // OSS Convoy may limit the number of organisations.
+      expect(e.statusCode, 400);
+    }
+  });
+
   test('list projects and create personal API key', () async {
     // Login.
     final loginResult = await accountClient.login(
