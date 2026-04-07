@@ -234,6 +234,21 @@ class ConvoyAccountClient {
     ];
   }
 
+  /// Revoke a personal API key.
+  Future<void> revokePersonalApiKey({
+    required String accessToken,
+    required String userId,
+    required String keyId,
+  }) async {
+    final uid = Uri.encodeComponent(userId);
+    final kid = Uri.encodeComponent(keyId);
+    await _send(
+      'PUT',
+      '/ui/users/$uid/security/$kid/revoke',
+      accessToken: accessToken,
+    );
+  }
+
   // ---------------------------------------------------------------------------
   // Internal helpers
   // ---------------------------------------------------------------------------

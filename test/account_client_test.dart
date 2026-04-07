@@ -163,4 +163,62 @@ void main() {
     expect(match.first.uid, isNotEmpty);
     expect(match.first.expiresAt, isNotEmpty);
   });
+
+  test('revoke personal API key', () async {
+    final loginResult = await accountClient.login(
+      username: _superuserEmail,
+      password: _superuserPassword,
+    );
+    final token = loginResult.accessToken;
+    final userId = loginResult.userId;
+
+    // Get or create a project.
+    final orgs = await accountClient.listOrganisations(accessToken: token);
+    final orgId = orgs.first.uid;
+    var projects = await accountClient.listProjects(
+      accessToken: token,
+      organisationId: orgId,
+    );
+    late Project project;
+    if (projects.isEmpty) {
+      project = await accountClient.createProject(
+        accessToken: token,
+        organisationId: orgId,
+        name: randomName('proj'),
+      );
+    } else {
+      project = projects.first;
+    }
+
+    // Create a key.
+    final keyName = randomName('revkey');
+    await accountClient.createPersonalApiKey(
+      accessToken: token,
+      userId: userId,
+      name: keyName,
+      expiration: 30,
+      projectId: project.uid,
+    );
+
+    // Verify it appears in the list.
+    var keys = await accountClient.listPersonalApiKeys(
+      accessToken: token,
+      userId: userId,
+    );
+    final created = keys.firstWhere((k) => k.name == keyName);
+
+    // Revoke it.
+    await accountClient.revokePersonalApiKey(
+      accessToken: token,
+      userId: userId,
+      keyId: created.uid,
+    );
+
+    // Verify it's gone from the list.
+    keys = await accountClient.listPersonalApiKeys(
+      accessToken: token,
+      userId: userId,
+    );
+    expect(keys.any((k) => k.uid == created.uid), isFalse);
+  });
 }
