@@ -208,9 +208,41 @@ import 'api_utils.dart';''');
     for (var complexType in _complexTypes.stableSortedBy(
       (e) => e.className,
     )) {
+      // Skip the schema-generated ModelsPagedResponse — we emit a generic
+      // version below.
+      if (complexType.className == 'ModelsPagedResponse') continue;
       buffer.writeln(complexType.toCode());
       buffer.writeln();
     }
+
+    // Hand-written generic paged response that replaces the schema-generated
+    // ModelsPagedResponse. The `fromJson` factory takes an item deserializer
+    // so that paginated endpoints return fully-typed content lists.
+    buffer.writeln(r'''
+class ModelsPagedResponse<T> {
+  final List<T> content;
+  final DatastorePaginationData? pagination;
+
+  ModelsPagedResponse({required this.content, this.pagination});
+
+  factory ModelsPagedResponse.fromJson(
+    Map<String, Object?> json,
+    T Function(Map<String, Object?>) fromJsonT,
+  ) {
+    return ModelsPagedResponse(
+      content: (json['content'] as List<Object?>?)
+              ?.map((i) => fromJsonT(i as Map<String, Object?>? ?? const {}))
+              .toList() ??
+          [],
+      pagination: json['pagination'] != null
+          ? DatastorePaginationData.fromJson(
+              json['pagination']! as Map<String, Object?>,
+            )
+          : null,
+    );
+  }
+}
+''');
 
     for (var aliasType in _aliasTypes.stableSortedBy((e) => e.name)) {
       buffer.writeln(aliasType.toCode());
@@ -398,6 +430,7 @@ class Operation {
     var returnTypeName = 'void';
     DartType? returnDartType;
     var unwrapDataEnvelope = false;
+    DartType? pagedItemType; // non-null when the return is a paginated response
     if (response.content.isNotEmpty) {
       var firstResponseContent = response.content.entries.first.value;
       var responseSchema = firstResponseContent.schema;
@@ -408,10 +441,15 @@ class Operation {
       } else if (responseSchema != null) {
         // Detect Convoy's allOf envelope pattern:
         //   allOf: [ { $ref: ServerResponse }, { properties: { data: <ActualType> } } ]
-        var dataSchema = _extractDataSchema(responseSchema);
-        if (dataSchema != null) {
-          returnDartType = _api.typeFromSchema(dataSchema);
-          returnTypeName = returnDartType.toString();
+        var dataResult = _extractDataSchema(responseSchema);
+        if (dataResult != null) {
+          if (dataResult.pagedItemSchema != null) {
+            pagedItemType = _api.typeFromSchema(dataResult.pagedItemSchema!);
+            returnTypeName = 'ModelsPagedResponse<$pagedItemType>';
+          } else {
+            returnDartType = _api.typeFromSchema(dataResult.schema);
+            returnTypeName = returnDartType.toString();
+          }
           unwrapDataEnvelope = true;
         } else if (firstResponseContent.example != null) {
           returnTypeName = 'dynamic';
@@ -462,7 +500,16 @@ class Operation {
 
       var sendCode =
           "await _client.send('${httpMethod.name}', '$url'$parametersCode,)";
-      if (returnDartType != null) {
+      if (pagedItemType != null) {
+        // Paginated response — unwrap data envelope and deserialize with
+        // typed item deserializer.
+        buffer.writeln('var response = $sendCode;');
+        buffer.write(
+          "return ModelsPagedResponse.fromJson("
+          "(response as Map<String, Object?>)['data'] as Map<String, Object?>, "
+          "(json) => $pagedItemType.fromJson(json),);",
+        );
+      } else if (returnDartType != null) {
         if (unwrapDataEnvelope) {
           buffer.writeln('var response = $sendCode;');
           var dataAccessor = "(response as Map<String, Object?>)['data']";
@@ -903,10 +950,20 @@ class AliasType extends DartType {
   }
 }
 
+/// Result of extracting the data type from a Convoy response envelope.
+class _DataSchemaResult {
+  final sw.Schema schema;
+
+  /// If the data is a paginated response, the schema of each item in the list.
+  final sw.Schema? pagedItemSchema;
+
+  _DataSchemaResult(this.schema, {this.pagedItemSchema});
+}
+
 /// Detect the Convoy allOf response envelope and extract the `data` field's
 /// schema. Returns `null` if the schema doesn't match the pattern or if the
 /// data type is a stub (placeholder with no meaningful fields).
-sw.Schema? _extractDataSchema(sw.Schema schema) {
+_DataSchemaResult? _extractDataSchema(sw.Schema schema) {
   var allOf = schema.allOf;
   if (allOf == null) return null;
   for (var entry in allOf) {
@@ -915,7 +972,31 @@ sw.Schema? _extractDataSchema(sw.Schema schema) {
       // Skip stub schemas — bare {type: object} or $ref to a bare object
       // (e.g. handlers.Stub). These don't carry meaningful data.
       if (_isStubSchema(dataSchema)) return null;
-      return dataSchema;
+
+      // Detect paginated response pattern:
+      //   data.allOf: [ { $ref: models.PagedResponse }, { properties: { content: { items: <ItemType> } } } ]
+      var pagedItemSchema = _extractPagedItemSchema(dataSchema);
+      return _DataSchemaResult(dataSchema, pagedItemSchema: pagedItemSchema);
+    }
+  }
+  return null;
+}
+
+/// If [dataSchema] is an allOf combining PagedResponse with a typed content
+/// array, return the item schema. Otherwise return null.
+sw.Schema? _extractPagedItemSchema(sw.Schema dataSchema) {
+  var allOf = dataSchema.allOf;
+  if (allOf == null) return null;
+  var hasPagedRef = allOf.any(
+    (e) => e.ref != null && e.ref!.contains('PagedResponse'),
+  );
+  if (!hasPagedRef) return null;
+  for (var entry in allOf) {
+    var contentSchema = entry.properties['content'];
+    if (contentSchema != null &&
+        contentSchema.type == 'array' &&
+        contentSchema.items != null) {
+      return contentSchema.items;
     }
   }
   return null;

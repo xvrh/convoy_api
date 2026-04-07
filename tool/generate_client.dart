@@ -9,6 +9,7 @@ import 'open_api/swagger_spec.dart';
 
 void main() {
   var jsonSpec = jsonDecode(specFile.readAsStringSync()) as Map<String, dynamic>;
+  _fixSpec(jsonSpec);
 
   final spec = Spec.fromJson(jsonSpec);
 
@@ -26,5 +27,19 @@ void main() {
     }
 
     File('lib/src/api_generated.dart').writeAsStringSync(code);
+}
+
+/// Patch spec inaccuracies before code generation. The downloaded JSON file
+/// stays untouched — fixes are applied in-memory only.
+void _fixSpec(Map<String, dynamic> spec) {
+  final schemas =
+      (spec['components'] as Map)['schemas'] as Map<String, dynamic>;
+
+  // datastore.Metadata.data is declared as array<int> but the API actually
+  // returns the event payload (a map). Widen to untyped.
+  final metadata = schemas['datastore.Metadata'] as Map<String, dynamic>;
+  (metadata['properties'] as Map<String, dynamic>)['data'] = {
+    'description': 'Data to be sent to endpoint.',
+  };
 }
 

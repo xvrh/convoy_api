@@ -93,8 +93,7 @@ void main() {
       projectId: projectId,
       ownerId: ownerId,
     );
-    final content = (listed.content as List).cast<Map<String, Object?>>();
-    expect(content, hasLength(2));
-    expect(content.map((e) => e['owner_id']), everyElement(ownerId));
+    expect(listed.content, hasLength(2));
+    expect(listed.content.map((e) => e.ownerId), everyElement(ownerId));
   });
 }
