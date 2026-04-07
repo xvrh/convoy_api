@@ -96,15 +96,13 @@ void main() {
           projectId: projectId,
           endpointId: [endpointId],
         );
-        final deliveries =
-            (resp.content as List?)?.cast<Map<String, Object?>>() ?? [];
-        if (deliveries.isEmpty) return null;
-        final status = deliveries.first['status'] as String?;
-        return status == 'Success' ? status : null;
+        if (resp.content.isEmpty) return null;
+        final status = resp.content.first.status;
+        return status == DatastoreEventDeliveryStatus.success ? status : null;
       },
       description: 'event delivery status=Success',
     );
-    expect(deliveryStatus, 'Success');
+    expect(deliveryStatus, DatastoreEventDeliveryStatus.success);
   });
 }
 

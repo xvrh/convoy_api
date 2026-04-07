@@ -18,7 +18,7 @@ class ConvoyClient {
       );
 
   /// This endpoint fetches an endpoints
-  Future<ModelsPagedResponse> getEndpoints({
+  Future<ModelsPagedResponse<ModelsEndpointResponse>> getEndpoints({
     required String projectId,
     String? direction,
     String? nextPageCursor,
@@ -44,6 +44,7 @@ class ConvoyClient {
     );
     return ModelsPagedResponse.fromJson(
       (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+      (json) => ModelsEndpointResponse.fromJson(json),
     );
   }
 
@@ -257,7 +258,8 @@ class ConvoyClient {
   }
 
   /// This endpoint retrieves all event deliveries paginated.
-  Future<ModelsPagedResponse> getEventDeliveriesPaged({
+  Future<ModelsPagedResponse<ModelsEventDeliveryResponse>>
+  getEventDeliveriesPaged({
     required String projectId,
     String? direction,
     String? endDate,
@@ -296,6 +298,7 @@ class ConvoyClient {
     );
     return ModelsPagedResponse.fromJson(
       (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+      (json) => ModelsEventDeliveryResponse.fromJson(json),
     );
   }
 
@@ -432,7 +435,7 @@ class ConvoyClient {
   }
 
   /// This endpoint fetches app events with pagination
-  Future<ModelsPagedResponse> getEventsPaged({
+  Future<ModelsPagedResponse<ModelsEventResponse>> getEventsPaged({
     required String projectId,
     String? direction,
     String? endDate,
@@ -467,6 +470,7 @@ class ConvoyClient {
     );
     return ModelsPagedResponse.fromJson(
       (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+      (json) => ModelsEventResponse.fromJson(json),
     );
   }
 
@@ -598,7 +602,7 @@ class ConvoyClient {
   }
 
   /// This endpoint fetches meta events with pagination
-  Future<ModelsPagedResponse> getMetaEventsPaged({
+  Future<ModelsPagedResponse<ModelsMetaEventResponse>> getMetaEventsPaged({
     required String projectId,
     String? direction,
     String? endDate,
@@ -624,6 +628,7 @@ class ConvoyClient {
     );
     return ModelsPagedResponse.fromJson(
       (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+      (json) => ModelsMetaEventResponse.fromJson(json),
     );
   }
 
@@ -658,7 +663,8 @@ class ConvoyClient {
   }
 
   /// This endpoint fetches multiple portal links
-  Future<ModelsPagedResponse> loadPortalLinksPaged({
+  Future<ModelsPagedResponse<DatastorePortalLinkResponse>>
+  loadPortalLinksPaged({
     required String projectId,
     String? direction,
     String? nextPageCursor,
@@ -684,6 +690,7 @@ class ConvoyClient {
     );
     return ModelsPagedResponse.fromJson(
       (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+      (json) => DatastorePortalLinkResponse.fromJson(json),
     );
   }
 
@@ -761,7 +768,7 @@ class ConvoyClient {
   }
 
   /// This endpoint fetches multiple sources
-  Future<ModelsPagedResponse> loadSourcesPaged({
+  Future<ModelsPagedResponse<ModelsSourceResponse>> loadSourcesPaged({
     required String projectId,
     String? direction,
     String? nextPageCursor,
@@ -787,6 +794,7 @@ class ConvoyClient {
     );
     return ModelsPagedResponse.fromJson(
       (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+      (json) => ModelsSourceResponse.fromJson(json),
     );
   }
 
@@ -868,7 +876,7 @@ class ConvoyClient {
   }
 
   /// This endpoint fetches all the subscriptions
-  Future<ModelsPagedResponse> getSubscriptions({
+  Future<ModelsPagedResponse<ModelsSubscriptionResponse>> getSubscriptions({
     required String projectId,
     String? direction,
     List<String>? endpointId,
@@ -895,6 +903,7 @@ class ConvoyClient {
     );
     return ModelsPagedResponse.fromJson(
       (response as Map<String, Object?>)['data'] as Map<String, Object?>,
+      (json) => ModelsSubscriptionResponse.fromJson(json),
     );
   }
 
@@ -3197,7 +3206,7 @@ class DatastoreMetaEventAttempt {
 
 class DatastoreMetadata {
   /// Data to be sent to endpoint.
-  final List<int>? data;
+  final Object? data;
   final int? intervalSeconds;
   final int? maxRetrySeconds;
   final String? nextSendTime;
@@ -3222,9 +3231,7 @@ class DatastoreMetadata {
 
   factory DatastoreMetadata.fromJson(Map<String, Object?> json) {
     return DatastoreMetadata(
-      data: (json[r'data'] as List<Object?>?)
-          ?.map((i) => (i as num?)?.toInt() ?? 0)
-          .toList(),
+      data: json[r'data'],
       intervalSeconds: (json[r'interval_seconds'] as num?)?.toInt(),
       maxRetrySeconds: (json[r'max_retry_seconds'] as num?)?.toInt(),
       nextSendTime: json[r'next_send_time'] as String?,
@@ -3276,7 +3283,7 @@ class DatastoreMetadata {
   }
 
   DatastoreMetadata copyWith({
-    List<int>? data,
+    Object? data,
     int? intervalSeconds,
     int? maxRetrySeconds,
     String? nextSendTime,
@@ -8101,48 +8108,6 @@ class ModelsOAuth2SigningKey {
   }
 }
 
-class ModelsPagedResponse {
-  final Object? content;
-  final DatastorePaginationData? pagination;
-
-  ModelsPagedResponse({this.content, this.pagination});
-
-  factory ModelsPagedResponse.fromJson(Map<String, Object?> json) {
-    return ModelsPagedResponse(
-      content: json[r'content'],
-      pagination: json[r'pagination'] != null
-          ? DatastorePaginationData.fromJson(
-              json[r'pagination']! as Map<String, Object?>,
-            )
-          : null,
-    );
-  }
-
-  Map<String, Object?> toJson() {
-    var content = this.content;
-    var pagination = this.pagination;
-
-    final json = <String, Object?>{};
-    if (content != null) {
-      json[r'content'] = content;
-    }
-    if (pagination != null) {
-      json[r'pagination'] = pagination.toJson();
-    }
-    return json;
-  }
-
-  ModelsPagedResponse copyWith({
-    Object? content,
-    DatastorePaginationData? pagination,
-  }) {
-    return ModelsPagedResponse(
-      content: content ?? this.content,
-      pagination: pagination ?? this.pagination,
-    );
-  }
-}
-
 class ModelsPubSubConfig {
   final ModelsAmqpPubSubconfig? amqp;
   final ModelsGooglePubSubConfig? google;
@@ -9799,6 +9764,31 @@ class UtilServerResponse {
     return UtilServerResponse(
       message: message ?? this.message,
       status: status ?? this.status,
+    );
+  }
+}
+
+class ModelsPagedResponse<T> {
+  final List<T> content;
+  final DatastorePaginationData? pagination;
+
+  ModelsPagedResponse({required this.content, this.pagination});
+
+  factory ModelsPagedResponse.fromJson(
+    Map<String, Object?> json,
+    T Function(Map<String, Object?>) fromJsonT,
+  ) {
+    return ModelsPagedResponse(
+      content:
+          (json['content'] as List<Object?>?)
+              ?.map((i) => fromJsonT(i as Map<String, Object?>? ?? const {}))
+              .toList() ??
+          [],
+      pagination: json['pagination'] != null
+          ? DatastorePaginationData.fromJson(
+              json['pagination']! as Map<String, Object?>,
+            )
+          : null,
     );
   }
 }
