@@ -116,4 +116,51 @@ void main() {
     );
     expect(endpoints, isNotNull);
   });
+
+  test('create and list personal API keys', () async {
+    final loginResult = await accountClient.login(
+      username: _superuserEmail,
+      password: _superuserPassword,
+    );
+    final token = loginResult.accessToken;
+    final userId = loginResult.userId;
+
+    // Get or create a project.
+    final orgs = await accountClient.listOrganisations(accessToken: token);
+    final orgId = orgs.first.uid;
+    var projects = await accountClient.listProjects(
+      accessToken: token,
+      organisationId: orgId,
+    );
+    late Project project;
+    if (projects.isEmpty) {
+      project = await accountClient.createProject(
+        accessToken: token,
+        organisationId: orgId,
+        name: randomName('proj'),
+      );
+    } else {
+      project = projects.first;
+    }
+
+    // Create a key with a known name.
+    final keyName = randomName('listkey');
+    await accountClient.createPersonalApiKey(
+      accessToken: token,
+      userId: userId,
+      name: keyName,
+      expiration: 30,
+      projectId: project.uid,
+    );
+
+    // List keys and verify it appears.
+    final keys = await accountClient.listPersonalApiKeys(
+      accessToken: token,
+      userId: userId,
+    );
+    final match = keys.where((k) => k.name == keyName).toList();
+    expect(match, hasLength(1));
+    expect(match.first.uid, isNotEmpty);
+    expect(match.first.expiresAt, isNotEmpty);
+  });
 }
