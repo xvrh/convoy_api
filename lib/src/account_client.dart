@@ -36,11 +36,26 @@ class Project {
   Project({required this.uid, required this.name});
 }
 
-/// A personal API key.
+/// A personal API key (returned by create).
 class PersonalApiKey {
   final String key;
 
   PersonalApiKey({required this.key});
+}
+
+/// A personal API key with metadata (returned by list).
+class PersonalApiKeyInfo {
+  final String uid;
+  final String name;
+  final String keyType;
+  final String? expiresAt;
+
+  PersonalApiKeyInfo({
+    required this.uid,
+    required this.name,
+    required this.keyType,
+    this.expiresAt,
+  });
 }
 
 /// Client for Convoy account-management endpoints that are not part of the
@@ -193,6 +208,30 @@ class ConvoyAccountClient {
     );
     final data = body['data'] as Map<String, Object?>;
     return PersonalApiKey(key: data['key'] as String);
+  }
+
+  /// List personal API keys for a user.
+  Future<List<PersonalApiKeyInfo>> listPersonalApiKeys({
+    required String accessToken,
+    required String userId,
+  }) async {
+    final uid = Uri.encodeComponent(userId);
+    final body = await _send(
+      'GET',
+      '/ui/users/$uid/security',
+      accessToken: accessToken,
+    );
+    final data = body['data'] as Map<String, Object?>;
+    final items = (data['content'] as List).cast<Map<String, Object?>>();
+    return [
+      for (final item in items)
+        PersonalApiKeyInfo(
+          uid: item['uid'] as String,
+          name: item['name'] as String,
+          keyType: item['key_type'] as String? ?? '',
+          expiresAt: item['expires_at'] as String?,
+        ),
+    ];
   }
 
   // ---------------------------------------------------------------------------
