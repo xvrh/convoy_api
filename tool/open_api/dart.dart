@@ -397,6 +397,7 @@ class Operation {
 
     var returnTypeName = 'void';
     DartType? returnDartType;
+    var unwrapDataEnvelope = false;
     if (response.content.isNotEmpty) {
       var firstResponseContent = response.content.entries.first.value;
       var responseSchema = firstResponseContent.schema;
@@ -404,9 +405,17 @@ class Operation {
           (responseSchema.type != null || responseSchema.ref != null)) {
         returnDartType = _api.typeFromSchema(responseSchema);
         returnTypeName = returnDartType.toString();
-      } else if (responseSchema != null ||
-          firstResponseContent.example != null) {
-        returnTypeName = 'dynamic';
+      } else if (responseSchema != null) {
+        // Detect Convoy's allOf envelope pattern:
+        //   allOf: [ { $ref: ServerResponse }, { properties: { data: <ActualType> } } ]
+        var dataSchema = _extractDataSchema(responseSchema);
+        if (dataSchema != null) {
+          returnDartType = _api.typeFromSchema(dataSchema);
+          returnTypeName = returnDartType.toString();
+          unwrapDataEnvelope = true;
+        } else if (firstResponseContent.example != null) {
+          returnTypeName = 'dynamic';
+        }
       }
     }
 
@@ -454,14 +463,28 @@ class Operation {
       var sendCode =
           "await _client.send('${httpMethod.name}', '$url'$parametersCode,)";
       if (returnDartType != null) {
-        var decodeCode = _fromJsonCodeForComplexType(
-          _api,
-          returnDartType,
-          sendCode,
-          accessorIsNullable: false,
-          targetIsNullable: false,
-        );
-        buffer.write('return $decodeCode;');
+        if (unwrapDataEnvelope) {
+          buffer.writeln('var response = $sendCode;');
+          var dataAccessor = "(response as Map<String, Object?>)['data']";
+          var decodeCode = _fromJsonCodeForComplexType(
+            _api,
+            returnDartType,
+            dataAccessor,
+            accessorIsNullable: true,
+            targetIsNullable: false,
+            markAsResponse: false,
+          );
+          buffer.write('return $decodeCode;');
+        } else {
+          var decodeCode = _fromJsonCodeForComplexType(
+            _api,
+            returnDartType,
+            sendCode,
+            accessorIsNullable: false,
+            targetIsNullable: false,
+          );
+          buffer.write('return $decodeCode;');
+        }
       } else if (returnTypeName != 'void') {
         buffer.writeln('return $sendCode;');
       } else {
@@ -880,12 +903,45 @@ class AliasType extends DartType {
   }
 }
 
+/// Detect the Convoy allOf response envelope and extract the `data` field's
+/// schema. Returns `null` if the schema doesn't match the pattern or if the
+/// data type is a stub (placeholder with no meaningful fields).
+sw.Schema? _extractDataSchema(sw.Schema schema) {
+  var allOf = schema.allOf;
+  if (allOf == null) return null;
+  for (var entry in allOf) {
+    if (entry.properties.containsKey('data')) {
+      var dataSchema = entry.properties['data']!;
+      // Skip stub schemas — bare {type: object} or $ref to a bare object
+      // (e.g. handlers.Stub). These don't carry meaningful data.
+      if (_isStubSchema(dataSchema)) return null;
+      return dataSchema;
+    }
+  }
+  return null;
+}
+
+bool _isStubSchema(sw.Schema schema) {
+  if (schema.type == 'object' &&
+      schema.ref == null &&
+      schema.properties.isEmpty &&
+      schema.allOf == null) {
+    return true;
+  }
+  // A $ref pointing to a bare {type: object} stub (e.g. handlers.Stub).
+  if (schema.ref != null && schema.ref!.endsWith('.Stub')) {
+    return true;
+  }
+  return false;
+}
+
 String _fromJsonCodeForComplexType(
   Api api,
   DartType type,
   String accessor, {
   required bool accessorIsNullable,
   required bool targetIsNullable,
+  bool markAsResponse = true,
 }) {
   var complexType = api._findComplexType(type);
   if (complexType == null) {
@@ -896,8 +952,13 @@ String _fromJsonCodeForComplexType(
       targetIsNullable: targetIsNullable,
     );
   }
-  complexType.isResponse = true;
+  if (markAsResponse) {
+    complexType.isResponse = true;
+  }
 
+  if (accessorIsNullable) {
+    return '$type.fromJson($accessor as Map<String, Object?>)';
+  }
   return '$type.fromJson($accessor)';
 }
 

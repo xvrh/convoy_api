@@ -29,18 +29,18 @@ void main() {
         ownerId: 'owner-123',
       ),
     );
-    final createdData = (created as Map)['data'] as Map;
-    final endpointId = createdData['uid'] as String;
-    expect(endpointId, isNotEmpty);
-    expect(createdData['name'], name);
-    expect(createdData['owner_id'], 'owner-123');
+    expect(created.uid, isNotEmpty);
+    expect(created.name, name);
+    expect(created.ownerId, 'owner-123');
+
+    final endpointId = created.uid!;
 
     // GET
     final fetched = await api.getEndpoint(
       projectId: projectId,
       endpointId: endpointId,
     );
-    expect(((fetched as Map)['data'] as Map)['uid'], endpointId);
+    expect(fetched.uid, endpointId);
 
     // UPDATE
     final updatedName = '$name-updated';
@@ -53,21 +53,21 @@ void main() {
         description: 'updated description',
       ),
     );
-    expect(((updated as Map)['data'] as Map)['name'], updatedName);
+    expect(updated.name, updatedName);
 
     // PAUSE (toggle)
     final paused = await api.pauseEndpoint(
       projectId: projectId,
       endpointId: endpointId,
     );
-    expect(((paused as Map)['data'] as Map)['status'], 'paused');
+    expect(paused.status, DatastoreEndpointStatus.paused);
 
     // PAUSE again toggles back to active
     final reactivated = await api.pauseEndpoint(
       projectId: projectId,
       endpointId: endpointId,
     );
-    expect(((reactivated as Map)['data'] as Map)['status'], 'active');
+    expect(reactivated.status, DatastoreEndpointStatus.active);
 
     // DELETE
     await api.deleteEndpoint(
@@ -93,8 +93,7 @@ void main() {
       projectId: projectId,
       ownerId: ownerId,
     );
-    final content =
-        (((listed as Map)['data'] as Map)['content'] as List).cast<Map>();
+    final content = (listed.content as List).cast<Map<String, Object?>>();
     expect(content, hasLength(2));
     expect(content.map((e) => e['owner_id']), everyElement(ownerId));
   });
