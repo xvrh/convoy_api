@@ -13,7 +13,7 @@ Future<void> main() async {
   final httpClient = Client();
   final api = ConvoyClient(
     httpClient,
-    Uri.parse('http://localhost:5005/api'),
+    Uri.parse('http://localhost:5005'),
     apiKey: 'YOUR_PROJECT_API_KEY',
   );
 
@@ -31,8 +31,6 @@ Future<void> main() async {
 }
 ```
 
-The base URL must include the `/api` path segment. The client prepends
-`Bearer ` to the API key automatically.
 
 ## Regenerating the client
 
