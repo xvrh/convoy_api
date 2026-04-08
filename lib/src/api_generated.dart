@@ -6587,9 +6587,9 @@ class ModelsEventResponse {
   final String? appId;
   final String? createdAt;
 
-  /// Data is an arbitrary JSON value that gets sent as the body of the
-  /// webhook to the endpoints
-  final List<int>? data;
+  /// Data is an arbitrary JSON value that gets sent as the body of the webhook
+  /// to the endpoints
+  final Object? data;
   final String? deletedAt;
   final List<DatastoreEndpoint>? endpointMetadata;
   final List<String>? endpoints;
@@ -6635,9 +6635,7 @@ class ModelsEventResponse {
       acknowledgedAt: json[r'acknowledged_at'] as String?,
       appId: json[r'app_id'] as String?,
       createdAt: json[r'created_at'] as String?,
-      data: (json[r'data'] as List<Object?>?)
-          ?.map((i) => (i as num?)?.toInt() ?? 0)
-          .toList(),
+      data: json[r'data'],
       deletedAt: json[r'deleted_at'] as String?,
       endpointMetadata: (json[r'endpoint_metadata'] as List<Object?>?)
           ?.map(
@@ -6767,7 +6765,7 @@ class ModelsEventResponse {
     String? acknowledgedAt,
     String? appId,
     String? createdAt,
-    List<int>? data,
+    Object? data,
     String? deletedAt,
     List<DatastoreEndpoint>? endpointMetadata,
     List<String>? endpoints,
