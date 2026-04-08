@@ -89,7 +89,22 @@ void main() {
       reason: 'Convoy should sign deliveries with the project secret',
     );
 
-    // 7. The event delivery is visible via the public API as Success.
+    // 7. The event data round-trips as a map through the events API.
+    final event = await waitFor(
+      () async {
+        final resp = await api.getEventsPaged(
+          projectId: projectId,
+          endpointId: [endpointId],
+        );
+        return resp.content.isNotEmpty ? resp.content.first : null;
+      },
+      description: 'event visible via getEventsPaged',
+    );
+    expect(event.data, isA<Map>());
+    expect((event.data as Map)['invoice_id'], payload['invoice_id']);
+    expect((event.data as Map)['amount'], payload['amount']);
+
+    // 8. The event delivery is visible via the public API as Success.
     final deliveryStatus = await waitFor(
       () async {
         final resp = await api.getEventDeliveriesPaged(

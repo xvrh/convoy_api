@@ -50,5 +50,15 @@ void _fixSpec(Map<String, dynamic> spec) {
     'type': 'object',
     'description': 'JSON Schema describing the event type payload.',
   };
+
+  // models.EventResponse.data is declared as array<int> but the API actually
+  // returns the event payload (arbitrary JSON). Widen to untyped.
+  final eventResponse =
+      schemas['models.EventResponse'] as Map<String, dynamic>;
+  (eventResponse['properties'] as Map<String, dynamic>)['data'] = {
+    'description':
+        'Data is an arbitrary JSON value that gets sent as the body of the '
+            'webhook to the endpoints',
+  };
 }
 
