@@ -6814,7 +6814,9 @@ class ModelsEventTypeResponse {
   final String? category;
   final String? deprecatedAt;
   final String? description;
-  final List<int>? jsonSchema;
+
+  /// JSON Schema describing the event type payload.
+  final Map<String, Object?>? jsonSchema;
   final String? name;
   final String? uid;
 
@@ -6832,9 +6834,7 @@ class ModelsEventTypeResponse {
       category: json[r'category'] as String?,
       deprecatedAt: json[r'deprecated_at'] as String?,
       description: json[r'description'] as String?,
-      jsonSchema: (json[r'json_schema'] as List<Object?>?)
-          ?.map((i) => (i as num?)?.toInt() ?? 0)
-          .toList(),
+      jsonSchema: json[r'json_schema'] as Map<String, Object?>?,
       name: json[r'name'] as String?,
       uid: json[r'uid'] as String?,
     );
@@ -6874,7 +6874,7 @@ class ModelsEventTypeResponse {
     String? category,
     String? deprecatedAt,
     String? description,
-    List<int>? jsonSchema,
+    Map<String, Object?>? jsonSchema,
     String? name,
     String? uid,
   }) {
