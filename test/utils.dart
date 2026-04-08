@@ -10,14 +10,6 @@ final Uri convoyBaseUrl = Uri.parse(
   Platform.environment['CONVOY_BASE_URL'] ?? 'http://localhost:5005',
 );
 
-/// Base URL for the public Convoy API (prefixed with `/api`).
-///
-/// Used only by internal helpers that make raw HTTP calls. Client code should
-/// pass [convoyBaseUrl] to both [ConvoyClient] and [ConvoyAccountClient] — the
-/// clients prepend the correct path prefix internally.
-Uri get convoyApiBaseUrl =>
-    convoyBaseUrl.replace(path: '${convoyBaseUrl.path}/api');
-
 /// Hostname that containers use to reach services running on the test host.
 const hostFromDocker = 'host.docker.internal';
 
@@ -54,134 +46,56 @@ Future<ConvoyCredentials> bootstrapConvoy() async {
 
   final client = Client();
   try {
-    final loginResp = await client.post(
-      convoyBaseUrl.replace(path: '/ui/auth/login'),
-      headers: {'content-type': 'application/json'},
-      body: jsonEncode({
-        'username': _superuserEmail,
-        'password': _superuserPassword,
-      }),
+    final account = ConvoyAccountClient(client, convoyBaseUrl);
+
+    final login = await account.login(
+      username: _superuserEmail,
+      password: _superuserPassword,
     );
-    if (loginResp.statusCode != 200) {
-      throw StateError(
-        'Convoy login failed (${loginResp.statusCode}): ${loginResp.body}',
-      );
-    }
-    final token =
-        ((jsonDecode(loginResp.body)
-                    as Map<String, Object?>)['data']
-                as Map<String, Object?>)['token']
-            as Map<String, Object?>;
-    final accessToken = token['access_token'] as String;
+    final token = login.accessToken;
+    final userId = login.userId;
 
     // Reuse an existing organisation if present (OSS Convoy limits to one).
-    final orgListResp = await client.get(
-      convoyBaseUrl.replace(path: '/ui/organisations'),
-      headers: {'authorization': 'Bearer $accessToken'},
-    );
-    if (orgListResp.statusCode != 200) {
-      throw StateError(
-        'List organisations failed (${orgListResp.statusCode}): ${orgListResp.body}',
-      );
-    }
-    final existingOrgs =
-        (((jsonDecode(orgListResp.body) as Map<String, Object?>)['data']
-                    as Map<String, Object?>)['content']
-                as List)
-            .cast<Map<String, Object?>>();
+    final orgs = await account.listOrganisations(accessToken: token);
     String orgId;
-    if (existingOrgs.isNotEmpty) {
-      orgId = existingOrgs.first['uid'] as String;
+    if (orgs.isNotEmpty) {
+      orgId = orgs.first.uid;
     } else {
-      final orgResp = await client.post(
-        convoyBaseUrl.replace(path: '/ui/organisations'),
-        headers: {
-          'content-type': 'application/json',
-          'authorization': 'Bearer $accessToken',
-        },
-        body: jsonEncode({'name': 'convoy-api-smoke-tests'}),
+      final org = await account.createOrganisation(
+        accessToken: token,
+        name: 'convoy-api-smoke-tests',
       );
-      if (orgResp.statusCode != 201 && orgResp.statusCode != 200) {
-        throw StateError(
-          'Create organisation failed (${orgResp.statusCode}): ${orgResp.body}',
-        );
-      }
-      orgId =
-          ((jsonDecode(orgResp.body) as Map<String, Object?>)['data']
-              as Map<String, Object?>)['uid']
-          as String;
+      orgId = org.uid;
     }
 
     // Reuse an existing "smoke" project if present.
-    final projectListResp = await client.get(
-      convoyBaseUrl.replace(path: '/ui/organisations/$orgId/projects'),
-      headers: {'authorization': 'Bearer $accessToken'},
+    final projects = await account.listProjects(
+      accessToken: token,
+      organisationId: orgId,
     );
-    if (projectListResp.statusCode != 200) {
-      throw StateError(
-        'List projects failed (${projectListResp.statusCode}): ${projectListResp.body}',
-      );
-    }
-    final existingProjects =
-        ((jsonDecode(projectListResp.body)
-                    as Map<String, Object?>)['data']
-                as List)
-            .cast<Map<String, Object?>>();
-    final existing = existingProjects
-        .where((p) => p['name'] == 'smoke')
-        .firstOrNull;
+    final existing = projects.where((p) => p.name == 'smoke').firstOrNull;
     String projectId;
-    String apiKey;
     if (existing != null) {
-      projectId = existing['uid'] as String;
-      final regenResp = await client.put(
-        convoyBaseUrl.replace(
-          path:
-              '/ui/organisations/$orgId/projects/$projectId/security/keys/regenerate',
-        ),
-        headers: {'authorization': 'Bearer $accessToken'},
-      );
-      if (regenResp.statusCode != 200) {
-        throw StateError(
-          'Regenerate API key failed (${regenResp.statusCode}): ${regenResp.body}',
-        );
-      }
-      apiKey =
-          ((jsonDecode(regenResp.body) as Map<String, Object?>)['data']
-              as Map<String, Object?>)['key']
-          as String;
+      projectId = existing.uid;
     } else {
-      final projectResp = await client.post(
-        convoyBaseUrl.replace(path: '/ui/organisations/$orgId/projects'),
-        headers: {
-          'content-type': 'application/json',
-          'authorization': 'Bearer $accessToken',
-        },
-        body: jsonEncode({
-          'name': 'smoke',
-          'type': 'outgoing',
-          'config': {
-            'strategy': {'type': 'linear', 'duration': 1, 'retry_count': 2},
-            'signature': {'header': 'X-Convoy-Signature', 'versions': []},
-            'ratelimit': {'count': 5000, 'duration': 60},
-          },
-        }),
+      final project = await account.createProject(
+        accessToken: token,
+        organisationId: orgId,
+        name: 'smoke',
       );
-      if (projectResp.statusCode != 201 && projectResp.statusCode != 200) {
-        throw StateError(
-          'Create project failed (${projectResp.statusCode}): ${projectResp.body}',
-        );
-      }
-      final projectBody =
-          (jsonDecode(projectResp.body) as Map<String, Object?>)['data']
-              as Map<String, Object?>;
-      projectId =
-          (projectBody['project'] as Map<String, Object?>)['uid'] as String;
-      apiKey =
-          (projectBody['api_key'] as Map<String, Object?>)['key'] as String;
+      projectId = project.uid;
     }
-    final creds = ConvoyCredentials(projectId, apiKey);
 
+    // Create a personal API key for the project.
+    final apiKey = await account.createPersonalApiKey(
+      accessToken: token,
+      userId: userId,
+      name: 'smoke-${DateTime.now().millisecondsSinceEpoch}',
+      expiration: 30,
+      projectId: projectId,
+    );
+
+    final creds = ConvoyCredentials(projectId, apiKey.key);
     _bootstrapCache.writeAsStringSync(
       jsonEncode({'project_id': creds.projectId, 'api_key': creds.apiKey}),
     );
@@ -194,15 +108,9 @@ Future<ConvoyCredentials> bootstrapConvoy() async {
 Future<bool> _apiKeyWorks(ConvoyCredentials creds) async {
   final client = Client();
   try {
-    final resp = await client.get(
-      convoyApiBaseUrl.replace(
-        path:
-            '${convoyApiBaseUrl.path}/v1/projects/${creds.projectId}/endpoints',
-        queryParameters: {'perPage': '1'},
-      ),
-      headers: {'Authorization': 'Bearer ${creds.apiKey}'},
-    );
-    return resp.statusCode == 200;
+    final api = ConvoyClient(client, convoyBaseUrl, apiKey: creds.apiKey);
+    await api.getEndpoints(projectId: creds.projectId, perPage: 1);
+    return true;
   } catch (_) {
     return false;
   } finally {
@@ -216,11 +124,7 @@ Future<({ConvoyClient api, Client httpClient, String projectId})>
 makeConvoyClient() async {
   final creds = await bootstrapConvoy();
   final httpClient = Client();
-  final api = ConvoyClient(
-    httpClient,
-    convoyBaseUrl,
-    apiKey: creds.apiKey,
-  );
+  final api = ConvoyClient(httpClient, convoyBaseUrl, apiKey: creds.apiKey);
   return (api: api, httpClient: httpClient, projectId: creds.projectId);
 }
 

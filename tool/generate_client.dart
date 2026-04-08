@@ -41,5 +41,14 @@ void _fixSpec(Map<String, dynamic> spec) {
   (metadata['properties'] as Map<String, dynamic>)['data'] = {
     'description': 'Data to be sent to endpoint.',
   };
+
+  // models.EventTypeResponse.json_schema is declared as array<int> but the
+  // API actually returns a JSON Schema object (a map).
+  final eventType =
+      schemas['models.EventTypeResponse'] as Map<String, dynamic>;
+  (eventType['properties'] as Map<String, dynamic>)['json_schema'] = {
+    'type': 'object',
+    'description': 'JSON Schema describing the event type payload.',
+  };
 }
 
