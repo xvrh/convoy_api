@@ -202,11 +202,23 @@ void main() {
     final orgs = await accountClient.listOrganisations(accessToken: token);
     final orgId = orgs.first.uid;
 
-    final projects = await accountClient.listProjects(
+    // Use a dedicated project so we don't mutate the shared `smoke` project
+    // that other tests rely on. Reuse across runs to avoid hitting OSS
+    // Convoy's project limit.
+    const cfgProjectName = 'cfg-test';
+    final existing = await accountClient.listProjects(
       accessToken: token,
       organisationId: orgId,
     );
-    final project = projects.first;
+    final project =
+        existing
+            .where((p) => p.name.startsWith(cfgProjectName))
+            .firstOrNull ??
+        await accountClient.createProject(
+          accessToken: token,
+          organisationId: orgId,
+          name: cfgProjectName,
+        );
 
     final config = await accountClient.updateProjectConfig(
       accessToken: token,

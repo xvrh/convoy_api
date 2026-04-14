@@ -225,6 +225,22 @@ class ConvoyAccountClient {
     );
   }
 
+  /// Get a project's current signature configuration.
+  Future<ProjectSignatureConfig> getProjectSignatureConfig({
+    required String accessToken,
+    required String organisationId,
+    required String projectId,
+  }) async {
+    final orgId = Uri.encodeComponent(organisationId);
+    final pid = Uri.encodeComponent(projectId);
+    final body = await _send(
+      'GET',
+      '/ui/organisations/$orgId/projects/$pid',
+      accessToken: accessToken,
+    );
+    return _readSignatureConfig(body);
+  }
+
   /// Update a project's configuration (signature settings, etc.).
   ///
   /// Convoy's PUT endpoint requires [name]; callers typically pass the
