@@ -12,6 +12,10 @@ void main() {
   late Client httpClient;
   late ConvoyAccountClient accountClient;
 
+  setUpAll(() async {
+    await bootstrapConvoy();
+  });
+
   setUp(() {
     httpClient = Client();
     accountClient = ConvoyAccountClient(httpClient, convoyBaseUrl);
@@ -186,6 +190,50 @@ void main() {
     expect(match, hasLength(1));
     expect(match.first.uid, isNotEmpty);
     expect(match.first.expiresAt, isNotEmpty);
+  });
+
+  test('updateProjectConfig round-trips signature settings', () async {
+    final loginResult = await accountClient.login(
+      username: _superuserEmail,
+      password: _superuserPassword,
+    );
+    final token = loginResult.accessToken;
+
+    final orgs = await accountClient.listOrganisations(accessToken: token);
+    final orgId = orgs.first.uid;
+
+    // Use a dedicated project so we don't mutate the shared `smoke` project
+    // that other tests rely on. Reuse across runs to avoid hitting OSS
+    // Convoy's project limit.
+    const cfgProjectName = 'cfg-test';
+    final existing = await accountClient.listProjects(
+      accessToken: token,
+      organisationId: orgId,
+    );
+    final project =
+        existing
+            .where((p) => p.name.startsWith(cfgProjectName))
+            .firstOrNull ??
+        await accountClient.createProject(
+          accessToken: token,
+          organisationId: orgId,
+          name: cfgProjectName,
+        );
+
+    final config = await accountClient.updateProjectConfig(
+      accessToken: token,
+      organisationId: orgId,
+      projectId: project.uid,
+      name: project.name,
+      signatureHeader: 'X-Signature',
+      signatureVersions: [
+        SignatureVersion(hash: 'SHA256', encoding: 'hex'),
+      ],
+    );
+
+    expect(config.header, 'X-Signature');
+    expect(config.versions, isNotEmpty);
+    expect(config.versions.any((v) => v.hash == 'SHA256'), isTrue);
   });
 
   test('revoke personal API key', () async {
