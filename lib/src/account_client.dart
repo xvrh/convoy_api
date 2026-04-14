@@ -36,6 +36,26 @@ class Project {
   Project({required this.uid, required this.name});
 }
 
+/// One entry in a project's signature versions list.
+class SignatureVersion {
+  /// Hash algorithm, e.g. `SHA256`, `SHA512`.
+  final String hash;
+
+  /// Encoding of the signature, e.g. `hex`, `base64`.
+  final String encoding;
+
+  SignatureVersion({required this.hash, required this.encoding});
+}
+
+/// A project's signature configuration, as returned by Convoy.
+class ProjectSignatureConfig {
+  /// Header name the signature is sent under (e.g. `X-Signature`).
+  final String header;
+  final List<SignatureVersion> versions;
+
+  ProjectSignatureConfig({required this.header, required this.versions});
+}
+
 /// A personal API key (returned by create).
 class PersonalApiKey {
   final String key;
@@ -205,6 +225,55 @@ class ConvoyAccountClient {
     );
   }
 
+  /// Update a project's configuration (signature settings, etc.).
+  ///
+  /// Convoy's PUT endpoint requires [name]; callers typically pass the
+  /// project's existing name to leave it unchanged. Returns the updated
+  /// signature configuration as reported by the server.
+  Future<ProjectSignatureConfig> updateProjectConfig({
+    required String accessToken,
+    required String organisationId,
+    required String projectId,
+    required String name,
+    String? signatureHeader,
+    List<SignatureVersion>? signatureVersions,
+  }) async {
+    final orgId = Uri.encodeComponent(organisationId);
+    final pid = Uri.encodeComponent(projectId);
+
+    // Convoy's PUT replaces the whole config and enforces NOT NULL on several
+    // nested fields, so fetch the current config and merge the signature on
+    // top rather than sending a sparse payload.
+    final current = await _send(
+      'GET',
+      '/ui/organisations/$orgId/projects/$pid',
+      accessToken: accessToken,
+    );
+    final currentData = current['data'] as Map<String, Object?>;
+    final config = Map<String, Object?>.from(
+      (currentData['config'] as Map<String, Object?>?) ?? const {},
+    );
+    final signature = Map<String, Object?>.from(
+      (config['signature'] as Map<String, Object?>?) ?? const {},
+    );
+    if (signatureHeader != null) signature['header'] = signatureHeader;
+    if (signatureVersions != null) {
+      signature['versions'] = [
+        for (final v in signatureVersions)
+          {'hash': v.hash, 'encoding': v.encoding},
+      ];
+    }
+    config['signature'] = signature;
+
+    final body = await _send(
+      'PUT',
+      '/ui/organisations/$orgId/projects/$pid',
+      accessToken: accessToken,
+      body: {'name': name, 'config': config},
+    );
+    return _readSignatureConfig(body);
+  }
+
   /// Create a personal API key scoped to a project.
   Future<PersonalApiKey> createPersonalApiKey({
     required String accessToken,
@@ -264,6 +333,28 @@ class ConvoyAccountClient {
       'PUT',
       '/ui/users/$uid/security/$kid/revoke',
       accessToken: accessToken,
+    );
+  }
+
+  ProjectSignatureConfig _readSignatureConfig(Map<String, Object?> body) {
+    final data = body['data'] as Map<String, Object?>;
+    final project =
+        data.containsKey('project')
+            ? data['project'] as Map<String, Object?>
+            : data;
+    final config = project['config'] as Map<String, Object?>?;
+    final signature = config?['signature'] as Map<String, Object?>?;
+    final versions =
+        (signature?['versions'] as List? ?? const []).cast<Map<String, Object?>>();
+    return ProjectSignatureConfig(
+      header: signature?['header'] as String? ?? '',
+      versions: [
+        for (final v in versions)
+          SignatureVersion(
+            hash: v['hash'] as String? ?? '',
+            encoding: v['encoding'] as String? ?? '',
+          ),
+      ],
     );
   }
 

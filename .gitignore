@@ -1,0 +1,21 @@
+# Dart / Pub
+.dart_tool/
+.packages
+build/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# macOS
+.DS_Store
+
+# Test artifacts
+test/.convoy-bootstrap.json
+
+.*
+_*
+
+!.gitignore
+!.github
