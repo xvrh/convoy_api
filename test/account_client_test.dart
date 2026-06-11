@@ -236,6 +236,73 @@ void main() {
     expect(config.versions.any((v) => v.hash == 'SHA256'), isTrue);
   });
 
+  test('regenerate project API key', () async {
+    final loginResult = await accountClient.login(
+      username: _superuserEmail,
+      password: _superuserPassword,
+    );
+    final token = loginResult.accessToken;
+
+    final orgs = await accountClient.listOrganisations(accessToken: token);
+    final orgId = orgs.first.uid;
+
+    // Reuse the `cfg-test` project: regeneration revokes one of the
+    // project's existing keys, so using the shared `smoke` project would
+    // race the other suites, and OSS Convoy's 2-project limit rules out a
+    // third dedicated project.
+    const cfgProjectName = 'cfg-test';
+    final existing = await accountClient.listProjects(
+      accessToken: token,
+      organisationId: orgId,
+    );
+    final project =
+        existing
+            .where((p) => p.name.startsWith(cfgProjectName))
+            .firstOrNull ??
+        await accountClient.createProject(
+          accessToken: token,
+          organisationId: orgId,
+          name: cfgProjectName,
+        );
+
+    final first = await accountClient.regenerateProjectApiKey(
+      accessToken: token,
+      organisationId: orgId,
+      projectId: project.uid,
+    );
+    expect(first.uid, isNotEmpty);
+    expect(first.key, isNotEmpty);
+    expect(first.expiresAt, isNull);
+
+    // The regenerated key authenticates data-plane calls.
+    final firstClient = ConvoyClient(
+      httpClient,
+      convoyBaseUrl,
+      apiKey: first.key,
+    );
+    expect(await firstClient.getEndpoints(projectId: project.uid), isNotNull);
+
+    // Regenerating again revokes the previous key and returns a new one.
+    final second = await accountClient.regenerateProjectApiKey(
+      accessToken: token,
+      organisationId: orgId,
+      projectId: project.uid,
+    );
+    expect(second.key, isNot(first.key));
+
+    await expectLater(
+      firstClient.getEndpoints(projectId: project.uid),
+      throwsA(isA<ApiException>()),
+    );
+
+    final secondClient = ConvoyClient(
+      httpClient,
+      convoyBaseUrl,
+      apiKey: second.key,
+    );
+    expect(await secondClient.getEndpoints(projectId: project.uid), isNotNull);
+  });
+
   test('revoke personal API key', () async {
     final loginResult = await accountClient.login(
       username: _superuserEmail,

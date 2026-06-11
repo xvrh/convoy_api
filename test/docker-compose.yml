@@ -24,7 +24,7 @@ services:
       - convoy_net
 
   convoy-migrate:
-    image: getconvoy/convoy:latest
+    image: getconvoy/convoy:v26.3.5
     command: ["migrate", "up", "--config", "/convoy.json"]
     depends_on:
       postgres:
@@ -37,7 +37,7 @@ services:
       - convoy_net
 
   convoy:
-    image: getconvoy/convoy:latest
+    image: getconvoy/convoy:v26.3.5
     command: ["server", "--config", "/convoy.json"]
     depends_on:
       convoy-migrate:
@@ -60,7 +60,7 @@ services:
       - convoy_net
 
   convoy-agent:
-    image: getconvoy/convoy:latest
+    image: getconvoy/convoy:v26.3.5
     command: ["agent", "--config", "/convoy.json"]
     depends_on:
       convoy-migrate:

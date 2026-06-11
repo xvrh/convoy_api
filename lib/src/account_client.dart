@@ -78,9 +78,18 @@ class PersonalApiKeyInfo {
   });
 }
 
+/// A project-scoped API key (returned by [ConvoyAccountClient.regenerateProjectApiKey]).
+class ProjectApiKey {
+  final String uid;
+  final String key;
+  final String? expiresAt;
+
+  ProjectApiKey({required this.uid, required this.key, this.expiresAt});
+}
+
 /// Client for Convoy account-management endpoints that are not part of the
 /// generated datastore API: user registration, login, project management,
-/// and personal API key creation.
+/// and API key management.
 ///
 /// Unlike [ConvoyClient], this client does not take an API key at construction
 /// time. Authentication is done per-request via a Bearer token obtained from
@@ -288,6 +297,37 @@ class ConvoyAccountClient {
       body: {'name': name, 'config': config},
     );
     return _readSignatureConfig(body);
+  }
+
+  /// Regenerate a project's API key: revokes the project's current key and
+  /// returns a fresh one.
+  ///
+  /// Unlike personal API keys — which Convoy always creates with an expiry
+  /// (defaulting to 1 day when `expiration` is 0) — the regenerated project
+  /// key has no expiration.
+  ///
+  /// Note: Convoy looks up the key to revoke by `role.project` without
+  /// filtering on key type, so a personal API key scoped to the same project
+  /// may be revoked instead of the previous project key. Revoke leftover
+  /// personal keys first if you need deterministic rotation.
+  Future<ProjectApiKey> regenerateProjectApiKey({
+    required String accessToken,
+    required String organisationId,
+    required String projectId,
+  }) async {
+    final orgId = Uri.encodeComponent(organisationId);
+    final pid = Uri.encodeComponent(projectId);
+    final body = await _send(
+      'PUT',
+      '/ui/organisations/$orgId/projects/$pid/security/keys/regenerate',
+      accessToken: accessToken,
+    );
+    final data = body['data'] as Map<String, Object?>;
+    return ProjectApiKey(
+      uid: data['uid'] as String,
+      key: data['key'] as String,
+      expiresAt: data['expires_at'] as String?,
+    );
   }
 
   /// Create a personal API key scoped to a project.
